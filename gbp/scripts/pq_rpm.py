@@ -169,20 +169,23 @@ def generate_patches(repo, start, squash, end, outdir, options):
     for commit in reversed(repo.get_commits(start, end_commit)):
         info = repo.get_commit_info(commit)
         cmds = {}
-        _cmds, info['body'] = parse_gbp_commands(info,
-                                                 'gbp',
-                                                 ('ignore'),
-                                                 ('topic'))
-        cmds.update(_cmds)
+        for cmd_tag in ['gbp', 'gbp-pq']:
+            _cmds, info['body'] = parse_gbp_commands(info,
+                                                     cmd_tag,
+                                                     ('ignore'),
+                                                     ('topic', 'name'),
+                                                     ('topic', 'name'))
+            cmds.update(_cmds)
         _cmds, info['body'] = parse_gbp_commands(info,
                                                  'gbp-rpm',
                                                  ('ignore'),
                                                  ('if', 'ifarch'))
         cmds.update(_cmds)
         if not 'ignore' in cmds:
+            name = cmds.get('name', None)
             patch_fn = format_patch(outdir, repo, info, patches,
                                     options.patch_numbers,
-                                    options.patch_ignore_path)
+                                    options.patch_ignore_path, name=name)
             if patch_fn:
                 commands[os.path.basename(patch_fn)] = cmds
         else:
@@ -438,7 +441,8 @@ def import_spec_patches(repo, options):
                         (base, upstream_commit))
         for patch in queue:
             gbp.log.debug("Applying %s" % patch.path)
-            apply_and_commit_patch(repo, patch, packager)
+            name = os.path.basename(patch.path)
+            apply_and_commit_patch(repo, patch, packager, None, name)
     except (GbpError, GitRepositoryError) as err:
         repo.set_branch(base)
         repo.delete_branch(pq_branch)
