@@ -26,6 +26,7 @@ import pwd
 import socket
 import time
 from email.message import Message
+from email.generator import Generator
 from email.header import Header
 from email.charset import Charset, QP
 
@@ -252,7 +253,8 @@ def write_patch_file(filename, commit_info, diff):
                     msg.set_payload(body.encode('ascii'))
                 except UnicodeDecodeError:
                     msg.set_payload(body, charset)
-            patch.write(msg.as_string(unixfrom=False))
+            generator = Generator(patch, mangle_from_=False)
+            generator.flatten(msg, unixfrom=False)
 
             # Write diff
             patch.write('---\n')
