@@ -185,6 +185,10 @@ class SpecFile(object):
         """Parse a filtered spec file in rpm-python"""
         skip_tags = [tag.lower() for tag in skip_tags]
         with tempfile.NamedTemporaryFile(prefix='gbp') as filtered:
+            # Define a macro which the .spec file can use in order to behave
+            # differently when parsed by gbp.
+            filtered.write("%define _in_git_buildpackage 1\n")
+
             filtered.writelines(str(line) for line in self._content
                     if str(line).split(":")[0].strip().lower() not in skip_tags)
             filtered.flush()
